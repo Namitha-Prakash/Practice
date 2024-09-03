@@ -60,17 +60,14 @@ def get_gemini_fallback_chain():
     return conversation
 
 def user_input(user_question):
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
     vector_store = st.session_state["vector_store"]
     docs = vector_store.similarity_search(user_question)
     chain = get_conversational_chain()
-    response = chain.invoke(
-        {"input_documents": docs, "question": user_question},
-        return_only_outputs=True
-    )
+    response = chain({"input_documents": docs, "question": user_question})
+    
     if "answer is not available in the context" in response["output_text"].lower():
         gemini_fallback_chain = get_gemini_fallback_chain()
-        fallback_response = gemini_fallback_chain.invoke(user_question)
+        fallback_response = gemini_fallback_chain.run(user_question)
         st.session_state["last_response"] = fallback_response['response']
         return f" {fallback_response['response']}"
     else:
